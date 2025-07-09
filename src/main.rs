@@ -4,6 +4,8 @@ use std::process;
 
 mod lexer;
 
+use lexer::Lexer;
+
 fn main() {
     let args: Vec<String> = env::args().collect();
 
@@ -21,4 +23,16 @@ fn main() {
             process::exit(1);
         }
     };
+
+    // Step 1: Tokenize (Lexer) 
+    let mut lexer = Lexer::new(&source);
+    let tokens = match lexer.tokenize() {
+        Ok(tokens) => tokens,
+        Err(err) => {
+            eprintln!("Lexer error: {}", err);
+            process::exit(1);
+        }
+    };
+    
+    println!("Tokens: {:?}", tokens);
 }
