@@ -68,4 +68,61 @@ impl<'a> Lexer<'a> {
         self.position = self.position + 1;
         self.current_char = self.input.chars().nth(self.position);
     }   
+
+    fn peek(&self) -> Option<char> {
+        self.input.chars().nth(self.position + 1)
+    }
+
+    fn skip_whitespace(&mut self) {
+        while let Some(ch) = self.current_char {
+            if ch.is_whitespace() && ch != '\n' { // If Character is Whitespace,
+                self.advance(); // Skip it.
+            } else {
+                break;
+            }
+        }
+    }
+
+    fn read_number(&mut self) -> f64 {
+        let mut number = String::new();
+        
+        while let Some(ch) = self.current_char {
+            if ch.is_ascii_digit() || ch == '.' { //Check for ASCII Digit OR Decimal
+                number.push(ch);
+                self.advance(); 
+            } else {
+                break;
+            }
+        }
+        
+        number.parse().unwrap_or(0.0)
+    }
+
+    fn read_string(&mut self) -> Result<String, String> {
+        let mut string = String::new();
+        self.advance(); // Go over the Starting Quote
+        
+        while let Some(ch) = self.current_char {
+            if ch == '"' {
+                self.advance(); // Go Over the Closing Quote
+                return Ok(string);
+            }
+            if ch == '\\' {
+                self.advance();
+                match self.current_char {
+                    Some('n') => string.push('\n'),
+                    Some('t') => string.push('\t'),
+                    Some('r') => string.push('\r'),
+                    Some('\\') => string.push('\\'),
+                    Some('"') => string.push('"'),
+                    _ => return Err("Invalid escape sequence".to_string()),
+                }
+            } else {
+                string.push(ch);
+            }
+            self.advance();
+        }
+        
+        Err("Unterminated string".to_string())
+    }
 }
