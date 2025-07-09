@@ -125,4 +125,66 @@ impl<'a> Lexer<'a> {
         
         Err("Unterminated string".to_string())
     }
+
+    fn read_identifier(&mut self) -> String {
+        let mut identifier = String::new();
+
+        while let Some(ch) = self.current_char {
+            if ch.is_alphanumeric() || ch == '_' {
+                identifier.push(ch);
+                self.advance();
+            } else {
+                break;
+            }
+        }
+
+        identifier
+    }
+
+    fn read_multi_word_token(&mut self) -> String {
+        let mut words = Vec::new();
+
+        loop {
+            let word = self.read_identifier();
+
+            if word.is_empty() {
+                break;
+            }
+            words.push(word);
+            self.skip_whitespace();
+
+            if let Some(ch) = self.current_char {
+                if !ch.is_alphanumeric() {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+
+        words.join(" ")
+    }
+
+    fn keyword_or_identifier(&mut self) -> Token {
+        let text = self.read_multi_word_token();
+
+        match text.as_str() {
+            "let" => Token::Let,
+            "be" => Token::Be,
+            "when" => Token::When,
+            "then" => Token::Then,
+            "otherwise" => Token::Otherwise,
+            "show" => Token::Show,
+            "define" => Token::Define,
+            "with" => Token::With,
+            "end" => Token::End,
+            "is greater than" => Token::IsGreaterThan,
+            "is less than" => Token::IsLessThan,
+            "is greater than or equal" => Token::IsGreaterThanOrEqual,
+            "is less than or equal" => Token::IsLessThanOrEqual,
+            "is equal" => Token::IsEqual,
+            "is not equal" => Token::IsNotEqual,
+            _ => Token::Identifier(text),
+        }
+    }
 }
