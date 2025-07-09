@@ -33,7 +33,6 @@ pub enum Token {
     Eof,
 }
 
-
 pub struct Lexer<'a> {
     input: &'a str,
     position: usize,
@@ -52,12 +51,12 @@ impl<'a> Lexer<'a> {
             line: 1,
             column: 0,
             indent_stack: vec![0],
-        }; 
+        };
         lexer.current_char = lexer.input.chars().next();
         lexer
     }
 
-    fn advance(mut self) {
+    fn advance(&mut self) {
         if self.current_char == Some('\n') {
             self.line = self.line + 1;
             self.column = 0;

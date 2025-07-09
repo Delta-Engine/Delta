@@ -1,0 +1,15 @@
+let x be 10
+let name be "Delta"
+
+show "Hello from Delta!"
+show name
+
+when x is greater than 5 then
+    show "x is big"
+otherwise
+    show "x is small"
+
+define greet with person
+    show "Hello"
+    show person
+end

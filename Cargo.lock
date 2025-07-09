@@ -3,5 +3,5 @@
 version = 4
 
 [[package]]
-name = "Delta"
+name = "delta"
 version = "0.1.0"
