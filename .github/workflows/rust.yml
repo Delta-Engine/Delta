@@ -46,7 +46,7 @@ jobs:
         targets: ${{ matrix.target }}
 
     - name: Cache cargo dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.cargo/registry
@@ -76,7 +76,7 @@ jobs:
         copy target\${{ matrix.target }}\release\${{ matrix.artifact_name }} artifacts\${{ matrix.asset_name }}
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: delta-${{ matrix.target }}
         path: artifacts/${{ matrix.asset_name }}
