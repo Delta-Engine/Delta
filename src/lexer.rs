@@ -187,4 +187,81 @@ impl<'a> Lexer<'a> {
             _ => Token::Identifier(text),
         }
     }
+
+    // The below two functions are AI Generated.
+
+    fn handle_newline_and_indentation(&mut self) -> Vec<Token> {
+        let mut tokens = vec![Token::Newline];
+        self.advance(); // Skip the newline
+        
+        // Count indentation
+        let mut indent_level = 0;
+        while let Some(ch) = self.current_char {
+            if ch == ' ' {
+                indent_level += 1;
+                self.advance();
+            } else if ch == '\t' {
+                indent_level += 4; // Treat tab as 4 spaces
+                self.advance();
+            } else {
+                break;
+            }
+        }
+        
+        let current_indent = *self.indent_stack.last().unwrap();
+        
+        if indent_level > current_indent {
+            self.indent_stack.push(indent_level);
+            tokens.push(Token::Indent);
+        } else if indent_level < current_indent {
+            while let Some(&last_indent) = self.indent_stack.last() {
+                if last_indent <= indent_level {
+                    break;
+                }
+                self.indent_stack.pop();
+                tokens.push(Token::Dedent);
+            }
+        }
+        
+        tokens
+    }
+    
+    pub fn tokenize(&mut self) -> Result<Vec<Token>, String> {
+        let mut tokens = Vec::new();
+        
+        while let Some(ch) = self.current_char {
+            match ch {
+                ' ' | '\t' => self.skip_whitespace(),
+                '\n' => {
+                    let newline_tokens = self.handle_newline_and_indentation();
+                    tokens.extend(newline_tokens);
+                }
+                '"' => {
+                    let string = self.read_string()?;
+                    tokens.push(Token::String(string));
+                }
+                '0'..='9' => {
+                    let number = self.read_number();
+                    tokens.push(Token::Number(number));
+                }
+                'a'..='z' | 'A'..='Z' | '_' => {
+                    let token = self.keyword_or_identifier();
+                    tokens.push(token);
+                }
+                _ => {
+                    return Err(format!("Unexpected character: '{}' at line {}, column {}", 
+                                     ch, self.line, self.column));
+                }
+            }
+        }
+        
+        // Add final dedents for any remaining indentation
+        while self.indent_stack.len() > 1 {
+            self.indent_stack.pop();
+            tokens.push(Token::Dedent);
+        }
+        
+        tokens.push(Token::Eof);
+        Ok(tokens)
+    }
 }
