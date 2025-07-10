@@ -15,13 +15,14 @@ impl CodeGenerator {
         // For now, we wil just interpret the AST.
 
         println!("Code Generator not Implemented yet. Using Interpreter.");
-        Ok(());
+        Ok(())
     }
 
-    fn interpret(&mut self, program: &Program) -> Result<(), String> {
+    pub fn interpret(&mut self, program: &Program) -> Result<(), String> {
         for statement in &program.statements {
             self.interpret_statement(statement)?;
         }
+        Ok(())
     }
 
     fn interpret_statement(&mut self, statement: &Statement) -> Result<(), String> {

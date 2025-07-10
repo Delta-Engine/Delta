@@ -53,4 +53,11 @@ fn main() {
 
     // Step 3: Print AST (debug output)
     println!("AST: {:#?}", ast);
+
+    // Step 4: For now, just interpret
+    let mut codegen = CodeGenerator::new();
+    if let Err(err) = codegen.interpret(&ast) {
+        eprintln!("Interpreter error: {}", err);
+        process::exit(1);
+    }
 }
