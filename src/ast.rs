@@ -45,3 +45,30 @@ pub enum Expression {
     BinaryOp(BinaryOperation),
     FunctionCall(FunctionCall),
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct BinaryOperation {
+    pub left: Box<Expression>,
+    pub operator: BinaryOperator,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum BinaryOperator {
+    GreaterThan,
+    LessThan,
+    GreaterThanOrEqual,
+    LessThanOrEqual,
+    Equal,
+    NotEqual,
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FunctionCall {
+    pub name: String,
+    pub arguments: Vec<Expression>,
+}
