@@ -53,6 +53,8 @@ impl Parser {
         match self.current_token() {
             // TODO: Add Matches
             Token::Let => self.parse_let_statement(),
+            Token::Show => self.parse_show_statement(),
+            Token::When => self.parse_when_statement(),
             _ => {
                 let expr = self.parse_expression()?;
                 Ok(Statement::Expression(expr))
@@ -77,5 +79,57 @@ impl Parser {
         let value = self.parse_expression()?;
         
         Ok(Statement::Let(LetStatement { identifier, value }))
+    }
+
+    fn parse_show_statement(&mut self) -> Result<Statement, String> {
+        self.expect(Token::Show)?;
+        let value = self.parse_expression()?;
+        Ok(Statement::Show(ShowStatement { value }))
+    }
+    
+    fn parse_when_statement(&mut self) -> Result<Statement, String> {
+        self.expect(Token::When)?;
+        
+        let condition = self.parse_expression()?;
+        
+        self.expect(Token::Then)?;
+        self.skip_newlines();
+        self.expect(Token::Indent)?;
+        
+        let mut then_block = Vec::new();
+        while !matches!(self.current_token(), Token::Dedent | Token::Otherwise | Token::Eof) {
+            then_block.push(self.parse_statement()?);
+            self.skip_newlines();
+        }
+        
+        let otherwise_block = if matches!(self.current_token(), Token::Otherwise) {
+            self.advance(); // consume 'otherwise'
+            self.skip_newlines();
+            self.expect(Token::Indent)?;
+            
+            let mut otherwise_statements = Vec::new();
+            while !matches!(self.current_token(), Token::Dedent | Token::Eof) {
+                otherwise_statements.push(self.parse_statement()?);
+                self.skip_newlines();
+            }
+            
+            if matches!(self.current_token(), Token::Dedent) {
+                self.advance();
+            }
+            
+            Some(otherwise_statements)
+        } else {
+            None
+        };
+        
+        if matches!(self.current_token(), Token::Dedent) {
+            self.advance();
+        }
+        
+        Ok(Statement::When(WhenStatement {
+            condition,
+            then_block,
+            otherwise_block,
+        }))
     }
 }
