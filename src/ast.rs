@@ -22,3 +22,26 @@ pub struct LetStatement {
 pub struct ShowStatement {
     pub value: Expression,
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct WhenStatement {
+    pub condition: Expression,
+    pub then_block: Vec<Statement>,
+    pub otherwise_block: Option<Vec<Statement>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FunctionDef {
+    pub name: String,
+    pub parameters: Vec<String>,
+    pub body : Vec<Statement>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Expression {
+    Number(f64),
+    String(String),
+    Identifier(String),
+    BinaryOp(BinaryOperation),
+    FunctionCall(FunctionCall),
+}
