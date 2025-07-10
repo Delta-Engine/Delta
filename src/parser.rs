@@ -51,10 +51,10 @@ impl Parser {
 
     fn parse_statement(&mut self) -> Result<Statement, String> {
         match self.current_token() {
-            // TODO: Add Matches
             Token::Let => self.parse_let_statement(),
             Token::Show => self.parse_show_statement(),
             Token::When => self.parse_when_statement(),
+            Token::Define => self.parse_function_def(),
             _ => {
                 let expr = self.parse_expression()?;
                 Ok(Statement::Expression(expr))
@@ -131,5 +131,79 @@ impl Parser {
             then_block,
             otherwise_block,
         }))
+    }
+
+    fn parse_function_def(&mut self) -> Result<Statement, String> {
+        self.expect(Token::Define)?;
+        
+        let name = match self.current_token() {
+            Token::Identifier(name) => {
+                let name = name.clone();
+                self.advance();
+                name
+            }
+            _ => return Err("Expected function name after 'define'".to_string()),
+        };
+        
+        let mut parameters = Vec::new();
+        
+        if matches!(self.current_token(), Token::With) {
+            self.advance(); // consume 'with'
+            
+            loop {
+                match self.current_token() {
+                    Token::Identifier(param) => {
+                        parameters.push(param.clone());
+                        self.advance();
+                    }
+                    _ => break,
+                }
+                
+                // Check for more parameters (basic implementation)
+                if !matches!(self.current_token(), Token::Identifier(_)) {
+                    break;
+                }
+            }
+        }
+        
+        self.skip_newlines();
+        self.expect(Token::Indent)?;
+        
+        let mut body = Vec::new();
+        while !matches!(self.current_token(), Token::End | Token::Dedent | Token::Eof) {
+            body.push(self.parse_statement()?);
+            self.skip_newlines();
+        }
+        
+        if matches!(self.current_token(), Token::End) {
+            self.advance();
+        } else if matches!(self.current_token(), Token::Dedent) {
+            self.advance();
+        }
+        
+        Ok(Statement::FunctionDef(FunctionDef {
+            name,
+            parameters,
+            body,
+        }))
+    }
+    
+    fn parse_expression(&mut self) -> Result<Expression, String> {
+        self.parse_comparison()
+    }
+    
+    fn parse_comparison(&mut self) -> Result<Expression, String> {
+        let mut left = self.parse_primary()?;
+        
+        while let Some(op) = self.parse_comparison_operator() {
+            let right = self.parse_primary()?;
+            left = Expression::BinaryOp(BinaryOperation {
+                left: Box::new(left),
+                operator: op,
+                right: Box::new(right),
+            });
+        }
+        
+        Ok(left)
     }
 }
