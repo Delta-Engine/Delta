@@ -30,4 +30,22 @@ impl Parser {
             Err(format!("Expected {:?}, found {:?}", expected, self.current_token()))
         }
     }
+
+    fn skip_newlines(&mut self) {
+        while matches!(self.current_token(), Token::NewLine) {
+            self.advance();
+        }
+    }
+
+    pub fn parse(&mut self) -> Result<Program, String> {
+        let mut statements = Vec::new();
+        self.skip_newlines();
+
+        while !matches!(self.current_token(), Token::Eof) {
+            statements.push(self.parse_statement()?);
+            self.skip_newlines();
+        }
+
+        Ok(Program { statements })
+    }
 }
