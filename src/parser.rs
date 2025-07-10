@@ -48,4 +48,34 @@ impl Parser {
 
         Ok(Program { statements })
     }
+
+    fn parse_statement(&mut self) -> Result<Statement, String> {
+        match self.current_token() {
+            // TODO: Add Matches
+            Token::Let => self.parse_let_statement(),
+            _ => {
+                let expr = self.parse_expression()?;
+                Ok(Statement::Expression(expr))
+            }
+        }
+    }
+
+    fn parse_let_statement(&mut self) -> Result<Statement, String> {
+        self.expect(Token::Let)?;
+        
+        let identifier = match self.current_token() {
+            Token::Identifier(name) => {
+                let name = name.clone();
+                self.advance();
+                name
+            }
+            _ => return Err("Expected identifier after 'let'".to_string()),
+        };
+        
+        self.expect(Token::Be)?;
+        
+        let value = self.parse_expression()?;
+        
+        Ok(Statement::Let(LetStatement { identifier, value }))
+    }
 }
