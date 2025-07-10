@@ -164,10 +164,54 @@ impl<'a> Lexer<'a> {
         words.join(" ")
     }
 
-    fn keyword_or_identifier(&mut self) -> Token {
-        let text = self.read_multi_word_token();
+    fn try_match_keyword(&mut self, keyword: &str) -> bool {
+        let saved_position = self.position;
+        let saved_char = self.current_char;
+        let saved_line = self.line;
+        let saved_column = self.column;
 
-        match text.as_str() {
+        let words: Vec<&str> = keyword.split(' ').collect();
+
+        for (i, word) in words.iter().enumerate() {
+            if (i > 0) {
+                self.skip_whitespace();
+            }
+            
+            let read_word = self.read_identifier();
+
+            if read_word != *word {
+                self.position = saved_position;
+                self.current_char = saved_char;
+                self.line = saved_line;
+                self.column = saved_column;
+
+                return false;
+            }
+        }
+
+        true
+    }
+
+    fn keyword_or_identifier(&mut self) -> Token {
+        // Try to match multi-word keywords first (longest first)
+        let keywords = [
+            ("is greater than or equal", Token::IsGreaterThanOrEqual),
+            ("is less than or equal", Token::IsLessThanOrEqual),
+            ("is greater than", Token::IsGreaterThan),
+            ("is less than", Token::IsLessThan),
+            ("is not equal", Token::IsNotEqual),
+            ("is equal", Token::IsEqual),
+        ];
+        
+        for (keyword, token) in keywords.iter() {
+            if self.try_match_keyword(keyword) {
+                return token.clone();
+            }
+        }
+        
+        // Try single-word keywords
+        let word = self.read_identifier();
+        match word.as_str() {
             "let" => Token::Let,
             "be" => Token::Be,
             "when" => Token::When,
@@ -177,13 +221,7 @@ impl<'a> Lexer<'a> {
             "define" => Token::Define,
             "with" => Token::With,
             "end" => Token::End,
-            "is greater than" => Token::IsGreaterThan,
-            "is less than" => Token::IsLessThan,
-            "is greater than or equal" => Token::IsGreaterThanOrEqual,
-            "is less than or equal" => Token::IsLessThanOrEqual,
-            "is equal" => Token::IsEqual,
-            "is not equal" => Token::IsNotEqual,
-            _ => Token::Identifier(text),
+            _ => Token::Identifier(word),
         }
     }
 

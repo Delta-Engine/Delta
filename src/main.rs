@@ -5,9 +5,11 @@ use std::process;
 mod lexer;
 mod parser;
 mod ast;
+mod codegen;
 
 use lexer::Lexer;
 use parser::Parser;
+use codegen::CodeGenerator;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
