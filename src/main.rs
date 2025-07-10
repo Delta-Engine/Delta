@@ -3,8 +3,11 @@ use std::fs;
 use std::process;
 
 mod lexer;
+mod parser;
+mod ast;
 
 use lexer::Lexer;
+use parser::Parser;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -35,4 +38,17 @@ fn main() {
     };
     
     println!("Tokens: {:?}", tokens);
+
+    // Step 2: Parse into AST
+    let mut parser = Parser::new(tokens);
+    let ast = match parser.parse() {
+        Ok(ast) => ast,
+        Err(err) => {
+            eprintln!("Parser error: {}", err);
+            process::exit(1);
+        }
+    };
+
+    // Step 3: Print AST (debug output)
+    println!("AST: {:#?}", ast);
 }

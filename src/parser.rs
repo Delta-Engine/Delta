@@ -32,7 +32,7 @@ impl Parser {
     }
 
     fn skip_newlines(&mut self) {
-        while matches!(self.current_token(), Token::NewLine) {
+        while matches!(self.current_token(), Token::Newline) {
             self.advance();
         }
     }
