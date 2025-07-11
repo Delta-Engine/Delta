@@ -89,43 +89,51 @@ impl Parser {
     
     fn parse_when_statement(&mut self) -> Result<Statement, String> {
         self.expect(Token::When)?;
-        
+
         let condition = self.parse_expression()?;
-        
+
         self.expect(Token::Then)?;
         self.skip_newlines();
-        self.expect(Token::Indent)?;
-        
+
+        // For Indented Block(s): FUCKKKK
         let mut then_block = Vec::new();
-        while !matches!(self.current_token(), Token::Dedent | Token::Otherwise | Token::Eof) {
-            then_block.push(self.parse_statement()?);
-            self.skip_newlines();
-        }
-        
-        let otherwise_block = if matches!(self.current_token(), Token::Otherwise) {
-            self.advance(); // consume 'otherwise'
-            self.skip_newlines();
-            self.expect(Token::Indent)?;
-            
-            let mut otherwise_statements = Vec::new();
-            while !matches!(self.current_token(), Token::Dedent | Token::Eof) {
-                otherwise_statements.push(self.parse_statement()?);
+        if matches!(self.current_token(), Token::Indent) {
+            self.advance(); // Go Over Indent
+
+            while !matches!(self.current_token(), Token::Dedent | Token::Otherwise | Token::Eof) {
+                then_block.push(self.parse_statement()?);
                 self.skip_newlines();
             }
-            
+
             if matches!(self.current_token(), Token::Dedent) {
-                self.advance();
+                self.advance(); // Go Over Dedent
             }
-            
+        }
+
+        let otherwise_block = if matches!(self.current_token(), Token::Otherwise) {
+            self.advance(); // Go Over Otherwise
+            self.skip_newlines();
+
+            let mut otherwise_statements = Vec::new();
+            if matches!(self.current_token(), Token::Indent) {
+                self.advance(); // Go Over Indent
+
+                while !matches!(self.current_token(), Token::Dedent | Token::Eof) {
+                    otherwise_statements.push(self.parse_statement()?);
+                    self.skip_newlines();
+                }
+
+                if matches!(self.current_token(), Token::Dedent) {
+                    self.advance();
+                }
+            }
+
             Some(otherwise_statements)
         } else {
             None
         };
-        
-        if matches!(self.current_token(), Token::Dedent) {
-            self.advance();
-        }
-        
+
+                
         Ok(Statement::When(WhenStatement {
             condition,
             then_block,
@@ -167,17 +175,23 @@ impl Parser {
         }
         
         self.skip_newlines();
-        self.expect(Token::Indent)?;
         
         let mut body = Vec::new();
-        while !matches!(self.current_token(), Token::End | Token::Dedent | Token::Eof) {
-            body.push(self.parse_statement()?);
-            self.skip_newlines();
+        if matches!(self.current_token(), Token::Indent) {
+            self.advance(); // Go Over Indent
+            
+            while !matches!(self.current_token(), Token::End | Token::Dedent | Token::Eof) {
+                body.push(self.parse_statement()?);
+                self.skip_newlines();
+            }
+            
+            // Handle either 'end' keyword or dedent
+            if matches!(self.current_token(), Token::Dedent) {
+                self.advance();
+            }
         }
         
         if matches!(self.current_token(), Token::End) {
-            self.advance();
-        } else if matches!(self.current_token(), Token::Dedent) {
             self.advance();
         }
         
