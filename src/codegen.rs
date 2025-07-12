@@ -75,16 +75,24 @@ impl CodeGenerator {
                 let left_val = self.evaluate_expression(&binop.left)?;
                 let right_val = self.evaluate_expression(&binop.right)?;
                 
-                // Try to parse as numbers for comparison
+                // Try to parse as numbers for comparison and arithmetic
                 if let (Ok(left_num), Ok(right_num)) = (left_val.parse::<f64>(), right_val.parse::<f64>()) {
                     let result = match binop.operator {
-                        BinaryOperator::GreaterThan => left_num > right_num,
-                        BinaryOperator::LessThan => left_num < right_num,
-                        BinaryOperator::GreaterThanOrEqual => left_num >= right_num,
-                        BinaryOperator::LessThanOrEqual => left_num <= right_num,
-                        BinaryOperator::Equal => (left_num - right_num).abs() < f64::EPSILON,
-                        BinaryOperator::NotEqual => (left_num - right_num).abs() >= f64::EPSILON,
-                        _ => return Ok(format!("({} {:?} {})", left_val, binop.operator, right_val)),
+                        BinaryOperator::GreaterThan => return Ok((left_num > right_num).to_string()),
+                        BinaryOperator::LessThan => return Ok((left_num < right_num).to_string()),
+                        BinaryOperator::GreaterThanOrEqual => return Ok((left_num >= right_num).to_string()),
+                        BinaryOperator::LessThanOrEqual => return Ok((left_num <= right_num).to_string()),
+                        BinaryOperator::Equal => return Ok(((left_num - right_num).abs() < f64::EPSILON).to_string()),
+                        BinaryOperator::NotEqual => return Ok(((left_num - right_num).abs() >= f64::EPSILON).to_string()),
+                        BinaryOperator::Add => left_num + right_num,
+                        BinaryOperator::Subtract => left_num - right_num,
+                        BinaryOperator::Multiply => left_num * right_num,
+                        BinaryOperator::Divide => {
+                            if right_num == 0.0 {
+                                return Err("Division by zero".to_string());
+                            }
+                            left_num / right_num
+                        }
                     };
                     Ok(result.to_string())
                 } else {
