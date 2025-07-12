@@ -1,5 +1,3 @@
-use std::fmt::Binary;
-
 use crate::ast::*;
 use crate::lexer::Token;
 
@@ -209,7 +207,7 @@ impl Parser {
     }
     
     fn parse_comparison(&mut self) -> Result<Expression, String> {
-        let mut left = self.parse_primary()?;
+        let mut left = self.parse_arithmetic()?;
         
         while let Some(op) = self.parse_comparison_operator() {
             let right = self.parse_arithmetic()?;
