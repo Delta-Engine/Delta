@@ -38,7 +38,7 @@ fn main() {
         }
     };
     
-    println!("Tokens: {:?}", tokens);
+    // println!("Tokens: {:?}", tokens);
     
     // Step 2: Parse into AST
     let mut parser = Parser::new(tokens);
@@ -51,7 +51,7 @@ fn main() {
     };
     
     // Step 3: Print AST (debug output)
-    println!("AST: {:#?}", ast);
+    // println!("AST: {:#?}", ast);
     
     // Step 4: For now, just interpret
     let mut codegen = CodeGenerator::new();
