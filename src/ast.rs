@@ -15,7 +15,7 @@ pub enum Statement {
 #[derive(Debug, Clone, PartialEq)]
 pub struct LetStatement {
     pub identifier: String,
-    pub value : Expression,
+    pub value: Expression,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -34,7 +34,7 @@ pub struct WhenStatement {
 pub struct FunctionDef {
     pub name: String,
     pub parameters: Vec<String>,
-    pub body : Vec<Statement>,
+    pub body: Vec<Statement>,
 }
 
 #[derive(Debug, Clone, PartialEq)]

@@ -23,6 +23,12 @@ pub enum Token {
     Number(f64),
     String(String),
     Identifier(String),
+
+    // Operators
+    Plus,
+    Minus,
+    Multiply,
+    Divide,
     
     // Whitespace and structure
     Newline,
@@ -139,7 +145,7 @@ impl<'a> Lexer<'a> {
 
         identifier
     }
-
+    /*
     fn read_multi_word_token(&mut self) -> String {
         let mut words = Vec::new();
 
@@ -163,6 +169,7 @@ impl<'a> Lexer<'a> {
 
         words.join(" ")
     }
+    */
 
     fn try_match_keyword(&mut self, keyword: &str) -> bool {
         let saved_position = self.position;
@@ -284,6 +291,22 @@ impl<'a> Lexer<'a> {
                 'a'..='z' | 'A'..='Z' | '_' => {
                     let token = self.keyword_or_identifier();
                     tokens.push(token);
+                }
+                '+' => {
+                    tokens.push(Token::Plus);
+                    self.advance();
+                }
+                '-' => {
+                    tokens.push(Token::Minus);
+                    self.advance();
+                }
+                '*' => {
+                    tokens.push(Token::Multiply);
+                    self.advance();
+                }
+                '/' => {
+                    tokens.push(Token::Divide);
+                    self.advance();
                 }
                 _ => {
                     return Err(format!("Unexpected character: '{}' at line {}, column {}", 

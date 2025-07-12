@@ -1,3 +1,5 @@
+use std::fmt::Binary;
+
 use crate::ast::*;
 use crate::lexer::Token;
 
@@ -210,6 +212,60 @@ impl Parser {
         let mut left = self.parse_primary()?;
         
         while let Some(op) = self.parse_comparison_operator() {
+            let right = self.parse_arithmetic()?;
+            left = Expression::BinaryOp(BinaryOperation {
+                left: Box::new(left),
+                operator: op,
+                right: Box::new(right),
+            });
+        }
+        
+        Ok(left)
+    }
+
+    fn parse_arithmetic(&mut self) -> Result<Expression, String> {
+        let mut left = self.parse_term()?;
+        
+        while matches!(self.current_token(), Token::Plus | Token::Minus) {
+            let op = match self.current_token() {
+                Token::Plus => {
+                    self.advance();
+                    BinaryOperator::Add
+                }
+                Token::Minus => {
+                    self.advance();
+                    BinaryOperator::Subtract
+                }
+                _ => break,
+            };
+            
+            let right = self.parse_term()?;
+            left = Expression::BinaryOp(BinaryOperation {
+                left: Box::new(left),
+                operator: op,
+                right: Box::new(right),
+            });
+        }
+        
+        Ok(left)
+    }
+    
+    fn parse_term(&mut self) -> Result<Expression, String> {
+        let mut left = self.parse_primary()?;
+        
+        while matches!(self.current_token(), Token::Multiply | Token::Divide) {
+            let op = match self.current_token() {
+                Token::Multiply => {
+                    self.advance();
+                    BinaryOperator::Multiply
+                }
+                Token::Divide => {
+                    self.advance();
+                    BinaryOperator::Divide
+                }
+                _ => break,
+            };
+            
             let right = self.parse_primary()?;
             left = Expression::BinaryOp(BinaryOperation {
                 left: Box::new(left),
