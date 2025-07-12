@@ -2,5 +2,14 @@
 name = "delta"
 version = "1.0.0"
 edition = "2024"
+description = "Delta - A natural language inspired programming language"
+authors = ["Pranav Verma <pranav@verma.net.in>"]
+
+[[bin]]
+name = delta
+path = "src/main.rs"
 
 [dependencies]
+inkwell = { version = "0.4", features = ["llvm17-0"] }
+# Future dependencies for LLVM backend
+# llvm-sys = "170"
