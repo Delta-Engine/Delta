@@ -1,0 +1,5 @@
+let x be 10
+let name be "Delta"
+show "Hello from"
+show name
+show x

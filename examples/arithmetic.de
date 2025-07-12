@@ -1,0 +1,12 @@
+let a be 10
+let b be 3
+
+show "Basic arithmetic:"
+show a + b
+show a - b
+show a * b
+show a / b
+
+let result be a + b * 2
+show "Result of a + b * 2:"
+show result

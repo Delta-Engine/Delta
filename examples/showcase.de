@@ -1,0 +1,28 @@
+let age be 25
+let name be "Alice"
+
+show "Welcome to Delta!"
+show name
+
+when age is greater than 18 then
+    show "You are an adult"
+    when age is greater than 65 then
+        show "You are a senior"
+    otherwise
+        show "You are a working adult"
+otherwise
+    show "You are a minor"
+
+let x be 10
+let y be 5
+let sum be x + y
+let product be x * y
+
+show "Math results:"
+show sum
+show product
+
+when sum is greater than product then
+    show "Sum is greater than product"
+otherwise
+    show "Product is greater than sum"

@@ -1,0 +1,14 @@
+let x be 15
+let y be 5
+
+show "Testing conditionals..."
+
+when x is greater than y then
+    show "x is bigger than y"
+otherwise
+    show "x is not bigger than y"
+
+when y is greater than 10 then
+    show "y is big"
+otherwise
+    show "y is small"
