@@ -6,7 +6,7 @@ description = "Delta - A natural language inspired programming language"
 authors = ["Pranav Verma <pranav@verma.net.in>"]
 
 [[bin]]
-name = delta
+name = "delta"
 path = "src/main.rs"
 
 [dependencies]
