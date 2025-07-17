@@ -108,5 +108,46 @@ impl<'ctx> CodeGenerator<'ctx> {
         Ok(())
     }
 
-    // TO ADD ALL FUNCTIONS IN THE ABOVE FUNCTION.
+    // TODO: TO ADD ALL FUNCTIONS IN THE ABOVE FUNCTION.
+
+    fn compile_when_statement(&mut self, when_stmt: &WhenStatement) -> Result<(), Box<dyn Error>> {
+        let condition = self.compile_expression(&when_stmt.condition)?;
+
+        let current_fn = self.builder.get_insert_block().unwrap().get_parent().unwrap();
+        let then_block = self.context.append_basic_block(current_fn, "then");
+        let else_block = self.context.append_basic_block(current_fn, "else");
+        let merge_block = self.context.append_basic_block(current_fn, "merge");
+
+        // convert it to a bool (assume float)
+        let zero = self.get_float_type().const_float(0.0);
+        let cond_bool = self.builder.build_float_compare(
+            FloatPredicate::ONE, // not equal to zero (true mf)
+            condition,
+            zero,
+            "cond"
+        )?;
+
+        self.builder.build_conditional_branch(cond_bool, then_block, else_block)?;
+
+        // then block compilation
+        self.builder.position_at_end(then_block);
+        for stmt in &when_stmt.then_block {
+            self.compile_statement(stmt)?;
+        }
+        self.builder.build_unconditional_branch(merge_block)?;
+
+        // else block compilation
+        self.builder.position_at_end(else_block);
+        if let Some(otherwise_block) = &when_stmt.otherwise_block {
+            for stmt in otherwise_block {
+                self.compile_statement(stmt)?;
+            }
+        }
+        self.builder.build_unconditional_branch(merge_block)?;
+
+        // continue
+        self.builder.position_at_end(merge_block);
+
+        Ok(())
+    }
 }
