@@ -14,8 +14,10 @@ use codegen::CodeGenerator;
 fn main() {
     let args: Vec<String> = env::args().collect();
     
-    if args.len() != 2 {
-        eprintln!("Usage: {} <source_file.de>", args[0]);
+    if args.len() < 2 || args.len() > 3 {
+        eprintln!("Usage: {} <source_file.de> [--compile|--interpret]", args[0]);
+        eprintln!("  --compile   : Generate LLVM IR and compile (default)");
+        eprintln!("  --interpret : Run in interpreter mode");
         process::exit(1);
     }
     
