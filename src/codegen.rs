@@ -252,4 +252,14 @@ impl<'ctx> CodeGenerator<'ctx> {
         self.module.print_to_file(filename)?;
         Ok(())
     }
+
+    // keeping the int. for comp.
+    pub fn interpret(&mut self, program: &Program) -> Result<(), String> {
+        let mut interpreter_vars: HashMap<String, String> = HashMap::new();
+        
+        for statement in &program.statements {
+            self.interpret_statement(statement, &mut interpreter_vars)?;
+        }
+        Ok(())
+    }
 }
