@@ -22,6 +22,13 @@ fn main() {
     }
     
     let filename = &args[1];
+
+    let mode = if args.len() == 3 {
+        &args[2]
+    } else {
+        "--compile"
+    };
+
     let source = match fs::read_to_string(filename) {
         Ok(content) => content,
         Err(err) => {
