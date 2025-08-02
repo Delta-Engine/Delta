@@ -232,4 +232,24 @@ impl<'ctx> CodeGenerator<'ctx> {
             }
         }
     }
+
+    fn generate_print_call(&mut self, value: FloatValue<'ctx>) -> Result<(), Box<dyn Error>> {
+        let print_fn = self.module.get_function("printf").unwrap();
+
+        // create format str for print floatrs
+        let format_str = self.builder.build_global_string_ptr("%.2f\n", "fmt")?;
+
+        self.builder.build_Call(
+            print_fn,
+            &[format_str.as_pointer_value().into(), value.into()],
+            "printf_call"
+        )?;
+
+        Ok(())
+    }
+
+    pub fn save_to_file(&self, filename: &str) -> Result<(), Box<dyn Error>> {
+        self.module.print_to_file(filename)?;
+        Ok(())
+    }
 }
