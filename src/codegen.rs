@@ -262,4 +262,36 @@ impl<'ctx> CodeGenerator<'ctx> {
         }
         Ok(())
     }
+
+    fn interpret_statement(&self, statement: &Statement, variables: &mut HashMap<String, String>) -> Result<(), String> {
+        match statement {
+            Statement::Show(show) => {
+                let value = self.evaluate_expression(&show.value, variables)?;
+                println!("{}", value);
+            }
+            Statement::Let(let_stmt) => {
+                let value = self.evaluate_expression(&let_stmt.value, variables)?;
+                variables.insert(let_stmt.identifier.clone(), value);
+            }
+            Statement::When(when_stmt) => {
+                let condition_result = self.evaluate_expression(&when_stmt.condition, variables)?;
+                if condition_result.contains("true") || condition_result.contains("True") {
+                    for stmt in &when_stmt.then_block {
+                        self.interpret_statement(stmt, variables)?;
+                    }
+                } else if let Some(otherwise_block) = &when_stmt.otherwise_block {
+                    for stmt in otherwise_block {
+                        self.interpret_statement(stmt, variables)?;
+                    }
+                }
+            }
+            Statement::FunctionDef(func_def) => {
+                println!("Defined function: {}", func_def.name);
+            }
+            Statement::Expression(expr) => {
+                let _value = self.evaluate_expression(expr, variables)?;
+            }
+        }
+        Ok(())
+    }
 }
