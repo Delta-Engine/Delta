@@ -26,7 +26,7 @@ pub struct CodeGenerator<'ctx> {
     context: &'ctx Context,
     module: Module<'ctx>,
     builder: Builder<'ctx>,
-    variables: Hashmap<String, PointerValue<'ctx>>,
+    variables: HashMap<String, PointerValue<'ctx>>,
 }
 
 impl<'ctx> CodeGenerator<'ctx> {
@@ -46,7 +46,7 @@ impl<'ctx> CodeGenerator<'ctx> {
         self.context.f64_type()
     }
 
-    pub fn compile(&mu self, program: &Program) -> Result<(), Box<dyn Error>> {
+    pub fn compile(&mut self, program: &Program) -> Result<(), Box<dyn Error>> {
         let main_type = self.context.i32_type().fn_type(&[], false);
         let main_fn = self.module.add_function("main", main_type, None);
         let basic_block = self.context.append_basic_block(main_fn, "entry");
@@ -67,7 +67,7 @@ impl<'ctx> CodeGenerator<'ctx> {
             }));
         }
 
-        println!("LLVM IR generated successfully!")
+        println!("LLVM IR generated successfully!");
         self.module.print_to_stderr();
         Ok(())
     } 
@@ -83,7 +83,7 @@ impl<'ctx> CodeGenerator<'ctx> {
     fn compile_statement(&mut self, statement: &Statement) -> Result<(), Box<dyn Error>> {
         match statement {
             Statement::Let(let_stmt) => {
-                let value - self.compile_expression(&let_stmt.value)?;
+                let value = self.compile_expression(&let_stmt.value)?;
 
                 let alloc_s = self.builder.build_alloca(self.get_float_type(), &let_stmt.identifier)?;
                 self.builder.build_store(alloc_s, value);
@@ -162,7 +162,11 @@ impl<'ctx> CodeGenerator<'ctx> {
                 let printf_fn = self.module.get_function("printf").unwrap();
                 let string_ptr = self.builder.build_global_string_ptr(&format!("{}\n", s), "str")?;
 
-                self.builder.build_call(printf_fn, &[string_ptr.as_pointer_value().into(), "printf_string"], name)?;
+                self.builder.build_call(
+                    printf_fn,
+                    &[string_ptr.as_pointer_value().into()],
+                    "printf_string"
+                )?;
 
                 // return 0 as the numeric value
                 Ok(self.get_float_type().const_float(0.0))
@@ -234,13 +238,13 @@ impl<'ctx> CodeGenerator<'ctx> {
     }
 
     fn generate_print_call(&mut self, value: FloatValue<'ctx>) -> Result<(), Box<dyn Error>> {
-        let print_fn = self.module.get_function("printf").unwrap();
+        let printf_fn = self.module.get_function("printf").unwrap();
 
         // create format str for print floatrs
         let format_str = self.builder.build_global_string_ptr("%.2f\n", "fmt")?;
 
-        self.builder.build_Call(
-            print_fn,
+        self.builder.build_call(
+            printf_fn,
             &[format_str.as_pointer_value().into(), value.into()],
             "printf_call"
         )?;
