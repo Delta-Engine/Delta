@@ -294,4 +294,48 @@ impl<'ctx> CodeGenerator<'ctx> {
         }
         Ok(())
     }
+
+    fn evaluate_expression(&self, expression: &Expression, variables: &HashMap<String, String>) -> Result<String, String> {
+        match expression {
+            Expression::Number(n) => Ok(n.to_string()),
+            Expression::String(s) => Ok(s.clone()),
+            Expression::Identifier(name) => {
+                if let Some(value) = variables.get(name) {
+                    Ok(value.clone())
+                } else {
+                    Ok(format!("<undefined: {}>", name))
+                }
+            }
+            Expression::BinaryOp(binop) => {
+                let left_val = self.evaluate_expression(&binop.left, variables)?;
+                let right_val = self.evaluate_expression(&binop.right, variables)?;
+                
+                if let (Ok(left_num), Ok(right_num)) = (left_val.parse::<f64>(), right_val.parse::<f64>()) {
+                    let result = match binop.operator {
+                        BinaryOperator::GreaterThan => return Ok((left_num > right_num).to_string()),
+                        BinaryOperator::LessThan => return Ok((left_num < right_num).to_string()),
+                        BinaryOperator::GreaterThanOrEqual => return Ok((left_num >= right_num).to_string()),
+                        BinaryOperator::LessThanOrEqual => return Ok((left_num <= right_num).to_string()),
+                        BinaryOperator::Equal => return Ok(((left_num - right_num).abs() < f64::EPSILON).to_string()),
+                        BinaryOperator::NotEqual => return Ok(((left_num - right_num).abs() >= f64::EPSILON).to_string()),
+                        BinaryOperator::Add => left_num + right_num,
+                        BinaryOperator::Subtract => left_num - right_num,
+                        BinaryOperator::Multiply => left_num * right_num,
+                        BinaryOperator::Divide => {
+                            if right_num == 0.0 {
+                                return Err("Division by zero".to_string());
+                            }
+                            left_num / right_num
+                        }
+                    };
+                    Ok(result.to_string())
+                } else {
+                    Ok(format!("({} {:?} {})", left_val, binop.operator, right_val))
+                }
+            }
+            Expression::FunctionCall(call) => {
+                Ok(format!("<function call: {}>", call.name))
+            }
+        }
+    }
 }
