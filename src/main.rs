@@ -10,6 +10,7 @@ mod codegen;
 use lexer::Lexer;
 use parser::Parser;
 use codegen::CodeGenerator;
+use inkwell::context::Context;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -22,6 +23,12 @@ fn main() {
     }
     
     let filename = &args[1];
+    let mode = if args.len() == 3 {
+        &args[2]
+    } else {
+        "--compile"
+    };
+    
     let source = match fs::read_to_string(filename) {
         Ok(content) => content,
         Err(err) => {
@@ -30,7 +37,7 @@ fn main() {
         }
     };
     
-    // Step 1: Tokenize (Lexer)
+    // Step 1: Tokenize
     let mut lexer = Lexer::new(&source);
     let tokens = match lexer.tokenize() {
         Ok(tokens) => tokens,
@@ -40,7 +47,9 @@ fn main() {
         }
     };
     
-    // println!("Tokens: {:?}", tokens);
+    if mode == "--debug" {
+        println!("Tokens: {:?}", tokens);
+    }
     
     // Step 2: Parse into AST
     let mut parser = Parser::new(tokens);
@@ -52,13 +61,54 @@ fn main() {
         }
     };
     
-    // Step 3: Print AST (debug output)
-    // println!("AST: {:#?}", ast);
+    if mode == "--debug" {
+        println!("AST: {:#?}", ast);
+    }
     
-    // Step 4: For now, just interpret
-    let mut codegen = CodeGenerator::new();
-    if let Err(err) = codegen.interpret(&ast) {
-        eprintln!("Interpreter error: {}", err);
-        process::exit(1);
+    // Step 3: Execute based on mode
+    match mode {
+        "--interpret" => {
+            println!("Running in interpreter mode...");
+            let context = Context::create();
+            let mut codegen = match CodeGenerator::new(&context, "delta_module") {
+                Ok(cg) => cg,
+                Err(err) => {
+                    eprintln!("Failed to create code generator: {}", err);
+                    process::exit(1);
+                }
+            };
+            
+            if let Err(err) = codegen.interpret(&ast) {
+                eprintln!("Interpreter error: {}", err);
+                process::exit(1);
+            }
+        }
+        "--compile" | _ => {
+            println!("Compiling to LLVM IR...");
+            let context = Context::create();
+            let mut codegen = match CodeGenerator::new(&context, "delta_module") {
+                Ok(cg) => cg,
+                Err(err) => {
+                    eprintln!("Failed to create code generator: {}", err);
+                    process::exit(1);
+                }
+            };
+            
+            if let Err(err) = codegen.compile(&ast) {
+                eprintln!("Compilation error: {}", err);
+                process::exit(1);
+            }
+            
+            // Save LLVM IR to file
+            let ir_filename = filename.replace(".de", ".ll");
+            if let Err(err) = codegen.save_to_file(&ir_filename) {
+                eprintln!("Failed to save LLVM IR: {}", err);
+                process::exit(1);
+            }
+            
+            println!("LLVM IR saved to: {}", ir_filename);
+            println!("To compile to executable, run:");
+            println!("  clang {} -o {}", ir_filename, filename.replace(".de", ""));
+        }
     }
 }

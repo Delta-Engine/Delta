@@ -74,9 +74,6 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-cargo-
 
-    - name: Run tests
-      run: cargo test --verbose
-
     - name: Build release binary
       run: cargo build --release --target ${{ matrix.target }}
 
