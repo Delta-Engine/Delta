@@ -59,8 +59,13 @@ jobs:
     - name: Install LLVM (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        choco install llvm --version=17.0.6 --force --no-progress
+        # Download and extract pre-built LLVM with llvm-config
+        $llvmUrl = "https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/LLVM-17.0.6-win64.exe"
+        $llvmInstaller = "$env:TEMP\llvm-installer.exe"
+        Invoke-WebRequest -Uri $llvmUrl -OutFile $llvmInstaller
+        Start-Process -FilePath $llvmInstaller -ArgumentList "/S" -Wait
         echo "LLVM_SYS_170_PREFIX=C:\Program Files\LLVM" >> $env:GITHUB_ENV
+        echo "PATH=C:\Program Files\LLVM\bin;$env:PATH" >> $env:GITHUB_ENV
 
     - name: Cache cargo dependencies
       uses: actions/cache@v4
