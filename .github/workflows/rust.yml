@@ -51,16 +51,34 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y llvm-17-dev libclang-17-dev clang-17 libpolly-17-dev
 
-    - name: Install LLVM (macOS)
-      if: startsWith(matrix.os, 'macos')
+    - name: Install LLVM (macOS x86_64)
+      if: matrix.os == 'macos-latest' && matrix.target == 'x86_64-apple-darwin'
       run: |
+        # Install x86_64 version of Homebrew and LLVM
+        if [[ ! -d "/usr/local/bin" ]]; then
+          sudo mkdir -p /usr/local/bin
+          curl -sSL https://github.com/Homebrew/brew/tarball/master | sudo tar xz --strip 1 -C /usr/local
+        fi
+        arch -x86_64 /usr/local/bin/brew install llvm@17
+        echo "LLVM_SYS_170_PREFIX=/usr/local/opt/llvm@17" >> $GITHUB_ENV
+        echo "CC=/usr/local/opt/llvm@17/bin/clang" >> $GITHUB_ENV
+        echo "CXX=/usr/local/opt/llvm@17/bin/clang++" >> $GITHUB_ENV
+        echo "CFLAGS=-target x86_64-apple-darwin" >> $GITHUB_ENV
+        echo "CXXFLAGS=-target x86_64-apple-darwin" >> $GITHUB_ENV
+
+    - name: Install LLVM (macOS ARM64)
+      if: matrix.os == 'macos-latest' && matrix.target == 'aarch64-apple-darwin'
+      run: |
+        # Install LLVM for ARM64
         brew install llvm@17
         echo "LLVM_SYS_170_PREFIX=$(brew --prefix llvm@17)" >> $GITHUB_ENV
+        echo "CC=$(brew --prefix llvm@17)/bin/clang" >> $GITHUB_ENV
+        echo "CXX=$(brew --prefix llvm@17)/bin/clang++" >> $GITHUB_ENV
 
     - name: Install LLVM (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        choco install llvm --version=17.0.6 --force
+        choco install llvm --version=17.0.6 --force --no-progress
         echo "LLVM_SYS_170_PREFIX=C:\Program Files\LLVM" >> $env:GITHUB_ENV
 
     - name: Cache cargo dependencies
