@@ -56,24 +56,27 @@ jobs:
         echo "CC=$(brew --prefix llvm@17)/bin/clang" >> $GITHUB_ENV
         echo "CXX=$(brew --prefix llvm@17)/bin/clang++" >> $GITHUB_ENV
 
-    - name: Install LLVM (Windows)
+    - name: Install LLVM MinGW (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        # Download pre-built LLVM 17 from llvm-package-windows
-        $llvmVersion = "17.0.6"
-        $llvmUrl = "https://github.com/c3lang/win-llvm/releases/download/llvm_17_0_6/llvm-$llvmVersion-windows-amd64-msvc17-msvcrt.7z"
-        $llvmArchive = "llvm-windows.7z"
-        $llvmDir = "C:\llvm"
+        # Download pre-built LLVM MinGW toolchain
+        $llvmMingwVersion = "20231128"
+        $llvmMingwUrl = "https://github.com/mstorsjo/llvm-mingw/releases/download/$llvmMingwVersion/llvm-mingw-$llvmMingwVersion-msvcrt-x86_64.zip"
+        $llvmMingwArchive = "llvm-mingw.zip"
+        $llvmMingwDir = "C:\llvm-mingw"
         
-        # Download LLVM
-        Invoke-WebRequest -Uri $llvmUrl -OutFile $llvmArchive
+        # Download LLVM MinGW
+        Invoke-WebRequest -Uri $llvmMingwUrl -OutFile $llvmMingwArchive
         
-        # Extract using 7zip (available on GitHub runners)
-        7z x $llvmArchive -o$llvmDir
+        # Extract the archive
+        Expand-Archive -Path $llvmMingwArchive -DestinationPath "C:\"
         
-        # Set environment variables
-        echo "LLVM_SYS_170_PREFIX=$llvmDir" >> $env:GITHUB_ENV
-        echo "PATH=$llvmDir\bin;$env:PATH" >> $env:GITHUB_ENV
+        # Rename the extracted directory to a consistent name
+        Rename-Item "C:\llvm-mingw-$llvmMingwVersion-msvcrt-x86_64" $llvmMingwDir
+        
+        # Set environment variables for LLVM
+        echo "LLVM_SYS_170_PREFIX=$llvmMingwDir" >> $env:GITHUB_ENV
+        echo "PATH=$llvmMingwDir\bin;$env:PATH" >> $env:GITHUB_ENV
 
     - name: Cache cargo dependencies
       uses: actions/cache@v4
