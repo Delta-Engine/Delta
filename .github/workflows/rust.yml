@@ -45,6 +45,24 @@ jobs:
       with:
         targets: ${{ matrix.target }}
 
+    - name: Install LLVM (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y llvm-17-dev libclang-17-dev clang-17 libpolly-17-dev
+
+    - name: Install LLVM (macOS)
+      if: startsWith(matrix.os, 'macos')
+      run: |
+        brew install llvm@17
+        echo "LLVM_SYS_170_PREFIX=$(brew --prefix llvm@17)" >> $GITHUB_ENV
+
+    - name: Install LLVM (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        choco install llvm --version=17.0.6
+        echo "LLVM_SYS_170_PREFIX=C:\Program Files\LLVM" >> $env:GITHUB_ENV
+
     - name: Cache cargo dependencies
       uses: actions/cache@v4
       with:
