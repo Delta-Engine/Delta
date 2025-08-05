@@ -61,7 +61,7 @@ jobs:
       run: |
         # Download pre-built LLVM 17 from llvm-package-windows
         $llvmVersion = "17.0.6"
-        $llvmUrl = "https://github.com/vovkos/llvm-package-windows/releases/download/llvm-$llvmVersion/llvm-$llvmVersion-windows-amd64-msvc17-msvcrt.7z"
+        $llvmUrl = "https://github.com/c3lang/win-llvm/releases/download/llvm_17_0_6/llvm-$llvmVersion-windows-amd64-msvc17-msvcrt.7z"
         $llvmArchive = "llvm-windows.7z"
         $llvmDir = "C:\llvm"
         
