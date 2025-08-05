@@ -5,7 +5,7 @@ name: Build Delta
 
 on:
   push:
-    branches: [ master]
+    branches: [ master ]
   pull_request:
     branches: [ master ]
 
@@ -56,45 +56,22 @@ jobs:
         echo "CC=$(brew --prefix llvm@17)/bin/clang" >> $GITHUB_ENV
         echo "CXX=$(brew --prefix llvm@17)/bin/clang++" >> $GITHUB_ENV
 
-    - name: Cache LLVM (Windows)
+    - name: Setup MSYS2 (Windows)
       if: matrix.os == 'windows-latest'
-      id: cache-llvm-windows
-      uses: actions/cache@v4
+      uses: msys2/setup-msys2@v2
       with:
-        path: C:\llvm-17
-        key: llvm-17.0.6-windows-x64-minsizerel
-        restore-keys: |
-          llvm-17.0.6-windows-x64-
-
-    - name: Build LLVM (Windows)
-      if: matrix.os == 'windows-latest' && steps.cache-llvm-windows.outputs.cache-hit != 'true'
-      run: |
-        choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' --force --no-progress
-        
-        # Download LLVM source
-        $llvmUrl = "https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-17.0.6.tar.gz"
-        $llvmArchive = "$env:TEMP\llvm-source.tar.gz"
-        Invoke-WebRequest -Uri $llvmUrl -OutFile $llvmArchive
-        
-        # Extract source
-        cd $env:TEMP
-        tar -xzf llvm-source.tar.gz
-        cd llvm-project-llvmorg-17.0.6
-        
-        # Create build directory and configure
-        mkdir build
-        cd build
-        cmake ..\llvm -DCMAKE_INSTALL_PREFIX=C:\llvm-17 -DCMAKE_BUILD_TYPE=MinSizeRel -DLLVM_ENABLE_ASSERTIONS=OFF -G "Visual Studio 17 2022" -A x64
-        
-        # Build and install
-        cmake --build . --config MinSizeRel --target install --parallel
+        msystem: MINGW64
+        update: true
+        install: >-
+          mingw-w64-x86_64-llvm
+          mingw-w64-x86_64-clang
 
     - name: Setup LLVM Environment (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        # Set environment variables
-        echo "LLVM_SYS_170_PREFIX=C:\llvm-17" >> $env:GITHUB_ENV
-        echo "PATH=C:\llvm-17\bin;$env:PATH" >> $env:GITHUB_ENV
+        # Set environment variables for MSYS2 LLVM
+        echo "LLVM_SYS_170_PREFIX=C:\msys64\mingw64" >> $env:GITHUB_ENV
+        echo "PATH=C:\msys64\mingw64\bin;$env:PATH" >> $env:GITHUB_ENV
 
     - name: Cache cargo dependencies
       uses: actions/cache@v4
