@@ -28,10 +28,6 @@ jobs:
             artifact_name: delta.exe
             asset_name: delta-windows-x86_64.exe
           - os: macos-latest
-            target: x86_64-apple-darwin
-            artifact_name: delta
-            asset_name: delta-macos-x86_64
-          - os: macos-latest
             target: aarch64-apple-darwin
             artifact_name: delta
             asset_name: delta-macos-aarch64
@@ -51,22 +47,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y llvm-17-dev libclang-17-dev clang-17 libpolly-17-dev
 
-    - name: Install LLVM (macOS x86_64)
-      if: matrix.os == 'macos-latest' && matrix.target == 'x86_64-apple-darwin'
-      run: |
-        # Install x86_64 version of Homebrew and LLVM
-        if [[ ! -d "/usr/local/bin" ]]; then
-          sudo mkdir -p /usr/local/bin
-          curl -sSL https://github.com/Homebrew/brew/tarball/master | sudo tar xz --strip 1 -C /usr/local
-        fi
-        arch -x86_64 /usr/local/bin/brew install llvm@17
-        echo "LLVM_SYS_170_PREFIX=/usr/local/opt/llvm@17" >> $GITHUB_ENV
-        echo "CC=/usr/local/opt/llvm@17/bin/clang" >> $GITHUB_ENV
-        echo "CXX=/usr/local/opt/llvm@17/bin/clang++" >> $GITHUB_ENV
-        echo "CFLAGS=-target x86_64-apple-darwin" >> $GITHUB_ENV
-        echo "CXXFLAGS=-target x86_64-apple-darwin" >> $GITHUB_ENV
-
-    - name: Install LLVM (macOS ARM64)
+    - name: Install LLVM (macOS)
       if: matrix.os == 'macos-latest' && matrix.target == 'aarch64-apple-darwin'
       run: |
         # Install LLVM for ARM64
@@ -113,32 +94,4 @@ jobs:
       with:
         name: delta-${{ matrix.target }}
         path: artifacts/${{ matrix.asset_name }}
-        retention-days: 30
-
-  create-release-artifacts:
-    name: Create release artifacts
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.event_name == 'release'
-    
-    steps:
-    - name: Download all artifacts
-      uses: actions/download-artifact@v3
-      with:
-        path: artifacts
-
-    - name: Create release archive
-      run: |
-        cd artifacts
-        for dir in */; do
-          cd "$dir"
-          tar -czf "../${dir%-*}.tar.gz" *
-          cd ..
-        done
-
-    - name: Upload release assets
-      uses: softprops/action-gh-release@v1
-      with:
-        files: artifacts/*.tar.gz
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        retention-days: 60
