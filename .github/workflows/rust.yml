@@ -56,22 +56,23 @@ jobs:
         echo "CC=$(brew --prefix llvm@17)/bin/clang" >> $GITHUB_ENV
         echo "CXX=$(brew --prefix llvm@17)/bin/clang++" >> $GITHUB_ENV
 
-    - name: Setup MSYS2 (Windows)
+    - name: Setup vcpkg (Windows)
       if: matrix.os == 'windows-latest'
-      uses: msys2/setup-msys2@v2
+      uses: lukka/run-vcpkg@v11
       with:
-        msystem: MINGW64
-        update: true
-        install: >-
-          mingw-w64-x86_64-llvm
-          mingw-w64-x86_64-clang
+        vcpkgGitCommitId: 'c8696863d371ab7f46e213d8f5ca923c4aef2a00'
+
+    - name: Install LLVM via vcpkg (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        vcpkg install llvm:x64-windows
 
     - name: Setup LLVM Environment (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        # Set environment variables for MSYS2 LLVM
-        echo "LLVM_SYS_170_PREFIX=C:\msys64\mingw64" >> $env:GITHUB_ENV
-        echo "PATH=C:\msys64\mingw64\bin;$env:PATH" >> $env:GITHUB_ENV
+        # Set environment variables for vcpkg LLVM
+        echo "LLVM_SYS_170_PREFIX=$env:VCPKG_ROOT\installed\x64-windows" >> $env:GITHUB_ENV
+        echo "PATH=$env:VCPKG_ROOT\installed\x64-windows\bin;$env:PATH" >> $env:GITHUB_ENV
 
     - name: Cache cargo dependencies
       uses: actions/cache@v4
