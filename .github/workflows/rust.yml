@@ -56,8 +56,18 @@ jobs:
         echo "CC=$(brew --prefix llvm@17)/bin/clang" >> $GITHUB_ENV
         echo "CXX=$(brew --prefix llvm@17)/bin/clang++" >> $GITHUB_ENV
 
-    - name: Build LLVM (Windows)
+    - name: Cache LLVM (Windows)
       if: matrix.os == 'windows-latest'
+      id: cache-llvm-windows
+      uses: actions/cache@v4
+      with:
+        path: C:\llvm-17
+        key: llvm-17.0.6-windows-x64-minsizerel
+        restore-keys: |
+          llvm-17.0.6-windows-x64-
+
+    - name: Build LLVM (Windows)
+      if: matrix.os == 'windows-latest' && steps.cache-llvm-windows.outputs.cache-hit != 'true'
       run: |
         choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' --force --no-progress
         
@@ -78,7 +88,10 @@ jobs:
         
         # Build and install
         cmake --build . --config MinSizeRel --target install --parallel
-        
+
+    - name: Setup LLVM Environment (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
         # Set environment variables
         echo "LLVM_SYS_170_PREFIX=C:\llvm-17" >> $env:GITHUB_ENV
         echo "PATH=C:\llvm-17\bin;$env:PATH" >> $env:GITHUB_ENV
