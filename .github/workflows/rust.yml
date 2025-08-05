@@ -56,16 +56,32 @@ jobs:
         echo "CC=$(brew --prefix llvm@17)/bin/clang" >> $GITHUB_ENV
         echo "CXX=$(brew --prefix llvm@17)/bin/clang++" >> $GITHUB_ENV
 
-    - name: Install LLVM (Windows)
+    - name: Build LLVM (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        # Download and extract pre-built LLVM with llvm-config
-        $llvmUrl = "https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/LLVM-17.0.6-win64.exe"
-        $llvmInstaller = "$env:TEMP\llvm-installer.exe"
-        Invoke-WebRequest -Uri $llvmUrl -OutFile $llvmInstaller
-        Start-Process -FilePath $llvmInstaller -ArgumentList "/S" -Wait
-        echo "LLVM_SYS_170_PREFIX=C:\Program Files\LLVM" >> $env:GITHUB_ENV
-        echo "PATH=C:\Program Files\LLVM\bin;$env:PATH" >> $env:GITHUB_ENV
+        choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' --force --no-progress
+        
+        # Download LLVM source
+        $llvmUrl = "https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-17.0.6.tar.gz"
+        $llvmArchive = "$env:TEMP\llvm-source.tar.gz"
+        Invoke-WebRequest -Uri $llvmUrl -OutFile $llvmArchive
+        
+        # Extract source
+        cd $env:TEMP
+        tar -xzf llvm-source.tar.gz
+        cd llvm-project-llvmorg-17.0.6
+        
+        # Create build directory and configure
+        mkdir build
+        cd build
+        cmake ..\llvm -DCMAKE_INSTALL_PREFIX=C:\llvm-17 -DCMAKE_BUILD_TYPE=MinSizeRel -DLLVM_ENABLE_ASSERTIONS=OFF -G "Visual Studio 17 2022" -A x64
+        
+        # Build and install
+        cmake --build . --config MinSizeRel --target install --parallel
+        
+        # Set environment variables
+        echo "LLVM_SYS_170_PREFIX=C:\llvm-17" >> $env:GITHUB_ENV
+        echo "PATH=C:\llvm-17\bin;$env:PATH" >> $env:GITHUB_ENV
 
     - name: Cache cargo dependencies
       uses: actions/cache@v4
