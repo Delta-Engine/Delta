@@ -40,25 +40,38 @@ jobs:
       if: matrix.runner_os == 'windows'
       run: |
         # Check if Rust is already installed
-        if (Get-Command rustc -ErrorAction SilentlyContinue) {
+        $cargoPath = "$env:USERPROFILE\.cargo\bin\cargo.exe"
+        if (Test-Path $cargoPath) {
           Write-Host "Rust is already installed:"
-          rustc --version
-          cargo --version
+          & $cargoPath --version
+          & "$env:USERPROFILE\.cargo\bin\rustc.exe" --version
         } else {
           Write-Host "Installing Rust..."
           # Download and install rustup
           Invoke-WebRequest -Uri "https://win.rustup.rs" -OutFile "rustup-init.exe"
-          .\rustup-init.exe -y --default-toolchain stable
-          # Add to PATH for current session
-          $env:PATH += ";$env:USERPROFILE\.cargo\bin"
+          .\rustup-init.exe -y --default-toolchain stable --profile default
+          
+          # Remove the installer
+          Remove-Item "rustup-init.exe" -ErrorAction SilentlyContinue
         }
         
-        # Install target
-        rustup target add ${{ matrix.target }}
+        # Always add cargo to PATH for subsequent steps
+        $cargoDir = "$env:USERPROFILE\.cargo\bin"
+        echo $cargoDir >> $env:GITHUB_PATH
         
-        # Verify installation
-        rustc --version
-        cargo --version
+        # Verify installation using full path
+        if (Test-Path "$cargoDir\cargo.exe") {
+          Write-Host "Cargo found, installing target..."
+          & "$cargoDir\cargo.exe" --version
+          & "$cargoDir\rustup.exe" target add ${{ matrix.target }}
+          
+          # Verify target installation
+          & "$cargoDir\rustc.exe" --version
+          & "$cargoDir\cargo.exe" --version
+        } else {
+          Write-Host "ERROR: Cargo not found after installation"
+          exit 1
+        }
       shell: powershell
     - name: Install LLVM (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
@@ -112,10 +125,20 @@ jobs:
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: |
           ${{ runner.os }}-cargo-
-    - name: Clean Cargo
+    - name: Clean Cargo (Unix)
+      if: matrix.os != 'self-hosted'
       run: cargo clean
-    - name: Build release binary
+    - name: Clean Cargo (Windows)
+      if: matrix.runner_os == 'windows'
+      run: cargo clean
+      shell: powershell
+    - name: Build release binary (Unix)
+      if: matrix.os != 'self-hosted'
       run: cargo build --release --target ${{ matrix.target }}
+    - name: Build release binary (Windows)
+      if: matrix.runner_os == 'windows'
+      run: cargo build --release --target ${{ matrix.target }}
+      shell: powershell
     - name: Prepare artifact (Unix)
       if: matrix.os != 'self-hosted'
       run: |
