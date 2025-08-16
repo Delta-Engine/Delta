@@ -55,24 +55,70 @@ jobs:
           try {
             Write-Host "Download attempt $i..."
             Invoke-WebRequest -Uri "https://github.com/Delta-Engine/llvm-builds-windows/releases/download/v17.0.6/llvm-17.0.6-windows-x64.zip" -OutFile "llvm.zip" -TimeoutSec 600
+            Write-Host "Download completed successfully"
             break
           } catch {
-            Write-Host "Download failed, retrying..."
+            Write-Host "Download failed: $($_.Exception.Message)"
+            if ($i -eq 3) { 
+              Write-Host "All download attempts failed"
+              exit 1 
+            }
+            Write-Host "Retrying in 5 seconds..."
             Start-Sleep 5
           }
         }
         
+        # Verify download succeeded
+        if (!(Test-Path "llvm.zip")) {
+          Write-Host "ERROR: llvm.zip not found after download"
+          exit 1
+        }
+        
+        Write-Host "Download size: $((Get-Item llvm.zip).Length) bytes"
+        
         # Extract with PowerShell (more reliable than 7z in CI)
         Write-Host "Extracting LLVM archive..."
-        Expand-Archive -Path "llvm.zip" -DestinationPath "." -Force
+        try {
+          Expand-Archive -Path "llvm.zip" -DestinationPath "." -Force
+          Write-Host "Extraction completed"
+        } catch {
+          Write-Host "Extraction failed: $($_.Exception.Message)"
+          exit 1
+        }
+        
+        # Verify extraction
+        if (!(Test-Path "llvm")) {
+          Write-Host "ERROR: llvm directory not found after extraction"
+          Get-ChildItem -Path "." -Directory | ForEach-Object { Write-Host "Found directory: $($_.Name)" }
+          exit 1
+        }
         
         # Set environment variables for LLVM
-        echo "LLVM_SYS_170_PREFIX=${{ github.workspace }}\llvm" >> $env:GITHUB_ENV
-        echo "${{ github.workspace }}\llvm\bin" >> $env:GITHUB_PATH
+        $llvmPath = "${{ github.workspace }}\llvm"
+        Write-Host "Setting LLVM_SYS_170_PREFIX to: $llvmPath"
+        echo "LLVM_SYS_170_PREFIX=$llvmPath" >> $env:GITHUB_ENV
+        echo "$llvmPath\bin" >> $env:GITHUB_PATH
         
-        # Verify LLVM installation
-        llvm-config.exe --version
-        clang.exe --version
+        # Verify LLVM installation using full paths
+        $llvmConfig = "$llvmPath\bin\llvm-config.exe"
+        $clang = "$llvmPath\bin\clang.exe"
+        
+        Write-Host "Checking for LLVM executables..."
+        if (Test-Path $llvmConfig) {
+          Write-Host "llvm-config found, getting version..."
+          & $llvmConfig --version
+        } else {
+          Write-Host "ERROR: llvm-config.exe not found at $llvmConfig"
+          Get-ChildItem -Path "$llvmPath\bin" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "Found: $($_.Name)" }
+        }
+        
+        if (Test-Path $clang) {
+          Write-Host "clang found, getting version..."
+          & $clang --version
+        } else {
+          Write-Host "ERROR: clang.exe not found at $clang"
+        }
+      shell: powershell
     - name: Cache cargo dependencies
       uses: actions/cache@v4
       with:
