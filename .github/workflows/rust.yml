@@ -19,7 +19,8 @@ jobs:
             target: x86_64-unknown-linux-gnu
             artifact_name: delta
             asset_name: delta-linux-x86_64
-          - os: windows-latest
+          - os: self-hosted
+            runner_os: windows
             target: x86_64-pc-windows-msvc
             artifact_name: delta.exe
             asset_name: delta-windows-x86_64.exe
@@ -47,54 +48,11 @@ jobs:
         echo "LLVM_SYS_170_PREFIX=$(brew --prefix llvm@17)" >> $GITHUB_ENV
         echo "CC=$(brew --prefix llvm@17)/bin/clang" >> $GITHUB_ENV
         echo "CXX=$(brew --prefix llvm@17)/bin/clang++" >> $GITHUB_ENV
-    - name: Setup LLVM (Windows)
-      if: matrix.os == 'windows-latest'
+    - name: Configure LLVM (Self-hosted Windows)
+      if: matrix.runner_os == 'windows'
       run: |
-        # Download pre-built LLVM from Delta-Engine with retry
-        for ($i = 1; $i -le 3; $i++) {
-          try {
-            Write-Host "Download attempt $i..."
-            Invoke-WebRequest -Uri "https://github.com/Delta-Engine/llvm-builds-windows/releases/download/v17.0.6/llvm-17.0.6-windows-x64.zip" -OutFile "llvm.zip" -TimeoutSec 600
-            Write-Host "Download completed successfully"
-            break
-          } catch {
-            Write-Host "Download failed: $($_.Exception.Message)"
-            if ($i -eq 3) { 
-              Write-Host "All download attempts failed"
-              exit 1 
-            }
-            Write-Host "Retrying in 5 seconds..."
-            Start-Sleep 5
-          }
-        }
-        
-        # Verify download succeeded
-        if (!(Test-Path "llvm.zip")) {
-          Write-Host "ERROR: llvm.zip not found after download"
-          exit 1
-        }
-        
-        Write-Host "Download size: $((Get-Item llvm.zip).Length) bytes"
-        
-        # Extract with PowerShell (more reliable than 7z in CI)
-        Write-Host "Extracting LLVM archive..."
-        try {
-          Expand-Archive -Path "llvm.zip" -DestinationPath "." -Force
-          Write-Host "Extraction completed"
-        } catch {
-          Write-Host "Extraction failed: $($_.Exception.Message)"
-          exit 1
-        }
-        
-        # Verify extraction
-        if (!(Test-Path "llvm")) {
-          Write-Host "ERROR: llvm directory not found after extraction"
-          Get-ChildItem -Path "." -Directory | ForEach-Object { Write-Host "Found directory: $($_.Name)" }
-          exit 1
-        }
-        
-        # Set environment variables for LLVM
-        $llvmPath = "${{ github.workspace }}\llvm"
+        # Set environment variables for pre-installed LLVM
+        $llvmPath = "C:\llvm-build\llvm-project\build\Release"
         Write-Host "Setting LLVM_SYS_170_PREFIX to: $llvmPath"
         echo "LLVM_SYS_170_PREFIX=$llvmPath" >> $env:GITHUB_ENV
         echo "$llvmPath\bin" >> $env:GITHUB_PATH
@@ -140,7 +98,7 @@ jobs:
         cp target/${{ matrix.target }}/release/${{ matrix.artifact_name }} artifacts/${{ matrix.asset_name }}
         chmod +x artifacts/${{ matrix.asset_name }}
     - name: Prepare artifact (Windows)
-      if: matrix.os == 'windows-latest'
+      if: matrix.runner_os == 'windows'
       run: |
         mkdir artifacts
         copy target\${{ matrix.target }}\release\${{ matrix.artifact_name }} artifacts\${{ matrix.asset_name }}
