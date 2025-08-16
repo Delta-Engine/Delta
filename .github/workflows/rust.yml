@@ -2,16 +2,13 @@
 # (Give me some slack man, I dunna how to use fucken Matrix Builds)
 
 name: Build Delta
-
 on:
   push:
     branches: [ master ]
   pull_request:
     branches: [ master ]
-
 env:
   CARGO_TERM_COLOR: always
-
 jobs:
   build:
     name: Build for ${{ matrix.os }}
@@ -31,22 +28,18 @@ jobs:
             target: aarch64-apple-darwin
             artifact_name: delta
             asset_name: delta-macos-aarch64
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
         targets: ${{ matrix.target }}
-
     - name: Install LLVM (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
         sudo apt-get install -y llvm-17-dev libclang-17-dev clang-17 libpolly-17-dev
-
     - name: Install LLVM (macOS)
       if: matrix.os == 'macos-latest' && matrix.target == 'aarch64-apple-darwin'
       run: |
@@ -55,29 +48,20 @@ jobs:
         echo "LLVM_SYS_170_PREFIX=$(brew --prefix llvm@17)" >> $GITHUB_ENV
         echo "CC=$(brew --prefix llvm@17)/bin/clang" >> $GITHUB_ENV
         echo "CXX=$(brew --prefix llvm@17)/bin/clang++" >> $GITHUB_ENV
-
-    - name: Install LLVM MinGW (Windows)
+    - name: Setup LLVM (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        # Download pre-built LLVM MinGW toolchain
-        $llvmMingwVersion = "20231128"
-        $llvmMingwUrl = "https://github.com/mstorsjo/llvm-mingw/releases/download/$llvmMingwVersion/llvm-mingw-$llvmMingwVersion-msvcrt-x86_64.zip"
-        $llvmMingwArchive = "llvm-mingw.zip"
-        $llvmMingwDir = "C:\llvm-mingw"
-        
-        # Download LLVM MinGW
-        Invoke-WebRequest -Uri $llvmMingwUrl -OutFile $llvmMingwArchive
-        
-        # Extract the archive
-        Expand-Archive -Path $llvmMingwArchive -DestinationPath "C:\"
-        
-        # Rename the extracted directory to a consistent name
-        Rename-Item "C:\llvm-mingw-$llvmMingwVersion-msvcrt-x86_64" $llvmMingwDir
+        # Download pre-built LLVM from Delta-Engine
+        curl -L -o llvm.zip https://github.com/Delta-Engine/llvm-builds-windows/releases/download/v17.0.6/llvm-17.0.6-windows-x64.zip
+        7z x llvm.zip -ollvm
         
         # Set environment variables for LLVM
-        echo "LLVM_SYS_170_PREFIX=$llvmMingwDir" >> $env:GITHUB_ENV
-        echo "PATH=$llvmMingwDir\bin;$env:PATH" >> $env:GITHUB_ENV
-
+        echo "LLVM_SYS_170_PREFIX=${{ github.workspace }}\llvm" >> $env:GITHUB_ENV
+        echo "${{ github.workspace }}\llvm\bin" >> $env:GITHUB_PATH
+        
+        # Verify LLVM installation
+        llvm-config --version
+        clang --version
     - name: Cache cargo dependencies
       uses: actions/cache@v4
       with:
@@ -88,26 +72,21 @@ jobs:
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: |
           ${{ runner.os }}-cargo-
-
     - name: Clean Cargo
       run: cargo clean
-
     - name: Build release binary
       run: cargo build --release --target ${{ matrix.target }}
-
     - name: Prepare artifact (Unix)
       if: matrix.os != 'windows-latest'
       run: |
         mkdir -p artifacts
         cp target/${{ matrix.target }}/release/${{ matrix.artifact_name }} artifacts/${{ matrix.asset_name }}
         chmod +x artifacts/${{ matrix.asset_name }}
-
     - name: Prepare artifact (Windows)
       if: matrix.os == 'windows-latest'
       run: |
         mkdir artifacts
         copy target\${{ matrix.target }}\release\${{ matrix.artifact_name }} artifacts\${{ matrix.asset_name }}
-
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
