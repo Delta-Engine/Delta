@@ -50,11 +50,11 @@ jobs:
     - name: Setup LLVM (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        # Download pre-built minimal LLVM from Delta-Engine with retry
+        # Download pre-built LLVM from Delta-Engine with retry
         for ($i = 1; $i -le 3; $i++) {
           try {
             Write-Host "Download attempt $i..."
-            Invoke-WebRequest -Uri "https://github.com/Delta-Engine/llvm-builds-windows/releases/download/v17.0.6/llvm-17.0.6-windows-x64-minimal.zip" -OutFile "llvm.zip" -TimeoutSec 600
+            Invoke-WebRequest -Uri "https://github.com/Delta-Engine/llvm-builds-windows/releases/download/v17.0.6/llvm-17.0.6-windows-x64.zip" -OutFile "llvm.zip" -TimeoutSec 600
             Write-Host "Download completed successfully"
             break
           } catch {
@@ -87,14 +87,14 @@ jobs:
         }
         
         # Verify extraction
-        if (!(Test-Path "bin")) {
-          Write-Host "ERROR: bin directory not found after extraction"
+        if (!(Test-Path "llvm")) {
+          Write-Host "ERROR: llvm directory not found after extraction"
           Get-ChildItem -Path "." -Directory | ForEach-Object { Write-Host "Found directory: $($_.Name)" }
           exit 1
         }
         
         # Set environment variables for LLVM
-        $llvmPath = "${{ github.workspace }}"
+        $llvmPath = "${{ github.workspace }}\llvm"
         Write-Host "Setting LLVM_SYS_170_PREFIX to: $llvmPath"
         echo "LLVM_SYS_170_PREFIX=$llvmPath" >> $env:GITHUB_ENV
         echo "$llvmPath\bin" >> $env:GITHUB_PATH
