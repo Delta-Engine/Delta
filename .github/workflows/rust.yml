@@ -51,9 +51,21 @@ jobs:
     - name: Setup LLVM (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        # Download pre-built LLVM from Delta-Engine
-        curl -L -o llvm.zip https://github.com/Delta-Engine/llvm-builds-windows/releases/download/v17.0.6/llvm-17.0.6-windows-x64.zip
-        7z x llvm.zip -ollvm
+        # Download pre-built LLVM from Delta-Engine with retry
+        for ($i = 1; $i -le 3; $i++) {
+          try {
+            Write-Host "Download attempt $i..."
+            Invoke-WebRequest -Uri "https://github.com/Delta-Engine/llvm-builds-windows/releases/download/v17.0.6/llvm-17.0.6-windows-x64.zip" -OutFile "llvm.zip" -TimeoutSec 600
+            break
+          } catch {
+            Write-Host "Download failed, retrying..."
+            Start-Sleep 5
+          }
+        }
+        
+        # Extract with PowerShell (more reliable than 7z in CI)
+        Write-Host "Extracting LLVM archive..."
+        Expand-Archive -Path "llvm.zip" -DestinationPath "." -Force
         
         # Set environment variables for LLVM
         echo "LLVM_SYS_170_PREFIX=${{ github.workspace }}\llvm" >> $env:GITHUB_ENV
