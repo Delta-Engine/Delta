@@ -89,30 +89,59 @@ jobs:
     - name: Configure LLVM (Self-hosted Windows)
       if: matrix.runner_os == 'windows'
       run: |
-        # Set environment variables for pre-installed LLVM
-        $llvmPath = "C:\llvm-build\llvm-project\build\Release"
+        # Set environment variables for pre-installed LLVM at C:\llvm
+        $llvmPath = "C:\llvm"
         Write-Host "Setting LLVM_SYS_170_PREFIX to: $llvmPath"
         echo "LLVM_SYS_170_PREFIX=$llvmPath" >> $env:GITHUB_ENV
         echo "$llvmPath\bin" >> $env:GITHUB_PATH
         
-        # Verify LLVM installation using full paths
+        # Set additional environment variables that some Rust crates might need
+        echo "LIBCLANG_PATH=$llvmPath\bin" >> $env:GITHUB_ENV
+        echo "LLVM_CONFIG_PATH=$llvmPath\bin\llvm-config.exe" >> $env:GITHUB_ENV
+        
+        # Verify LLVM installation
         $llvmConfig = "$llvmPath\bin\llvm-config.exe"
         $clang = "$llvmPath\bin\clang.exe"
         
         Write-Host "Checking for LLVM executables..."
         if (Test-Path $llvmConfig) {
-          Write-Host "llvm-config found, getting version..."
+          Write-Host "llvm-config found, getting version and configuration..."
           & $llvmConfig --version
+          & $llvmConfig --prefix
+          & $llvmConfig --bindir
+          & $llvmConfig --libdir
+          & $llvmConfig --includedir
         } else {
           Write-Host "ERROR: llvm-config.exe not found at $llvmConfig"
-          Get-ChildItem -Path "$llvmPath\bin" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "Found: $($_.Name)" }
+          Write-Host "Contents of $llvmPath\bin:"
+          Get-ChildItem -Path "$llvmPath\bin" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $($_.Name)" }
+          exit 1
         }
         
         if (Test-Path $clang) {
           Write-Host "clang found, getting version..."
           & $clang --version
         } else {
-          Write-Host "ERROR: clang.exe not found at $clang"
+          Write-Host "WARNING: clang.exe not found at $clang"
+          Write-Host "This might be okay if your project doesn't require clang directly"
+        }
+        
+        # Verify library directories exist
+        $libDir = "$llvmPath\lib"
+        $includeDir = "$llvmPath\include"
+        
+        if (Test-Path $libDir) {
+          Write-Host "LLVM lib directory found"
+          $libCount = (Get-ChildItem -Path $libDir -Filter "*.lib" | Measure-Object).Count
+          Write-Host "Found $libCount .lib files"
+        } else {
+          Write-Host "WARNING: LLVM lib directory not found at $libDir"
+        }
+        
+        if (Test-Path $includeDir) {
+          Write-Host "LLVM include directory found"
+        } else {
+          Write-Host "WARNING: LLVM include directory not found at $includeDir"
         }
       shell: powershell
     - name: Cache cargo dependencies
@@ -137,7 +166,14 @@ jobs:
       run: cargo build --release --target ${{ matrix.target }}
     - name: Build release binary (Windows)
       if: matrix.runner_os == 'windows'
-      run: cargo build --release --target ${{ matrix.target }}
+      run: |
+        Write-Host "Building with environment:"
+        Write-Host "LLVM_SYS_170_PREFIX = $env:LLVM_SYS_170_PREFIX"
+        Write-Host "LIBCLANG_PATH = $env:LIBCLANG_PATH"
+        Write-Host "LLVM_CONFIG_PATH = $env:LLVM_CONFIG_PATH"
+        Write-Host "PATH includes: $env:PATH"
+        
+        cargo build --release --target ${{ matrix.target }}
       shell: powershell
     - name: Prepare artifact (Unix)
       if: matrix.os != 'self-hosted'
