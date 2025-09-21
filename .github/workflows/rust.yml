@@ -36,12 +36,12 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Install Rust (macOS)
-      if: matrix.os != 'self-hosted' && matrix.runner_os != 'linux'
+      if: matrix.os == 'macos-latest'
       uses: dtolnay/rust-toolchain@stable
       with:
         targets: ${{ matrix.target }}
     - name: Install Rust (Linux)
-      if: matrix.runner_os == 'linux'
+      if: matrix.os == 'self-hosted' && matrix.runner_os == 'linux'
       run: |
         # Check if Rust is already installed
         if command -v cargo &> /dev/null; then
@@ -60,7 +60,7 @@ jobs:
         # Install target if needed
         rustup target add ${{ matrix.target }}
     - name: Install Rust (Windows)
-      if: matrix.runner_os == 'windows'
+      if: matrix.os == 'self-hosted' && matrix.runner_os == 'windows'
       run: |
         # Check if Rust is already installed
         $cargoPath = "$env:USERPROFILE\.cargo\bin\cargo.exe"
@@ -98,7 +98,7 @@ jobs:
       shell: powershell
 
     - name: Install LLVM (Linux)
-      if: matrix.runner_os == 'linux'
+      if: matrix.os == 'self-hosted' && matrix.runner_os == 'linux'
       run: |
         # Install build essentials first
         sudo apt-get update
@@ -133,7 +133,7 @@ jobs:
         echo "CC=$(brew --prefix llvm@17)/bin/clang" >> $GITHUB_ENV
         echo "CXX=$(brew --prefix llvm@17)/bin/clang++" >> $GITHUB_ENV
     - name: Check LLVM (Windows)
-      if: matrix.runner_os == 'windows'
+      if: matrix.os == 'self-hosted' && matrix.runner_os == 'windows'
       run: |
         # Set environment variables for pre-installed LLVM at C:\llvm
         $llvmPath = "C:\llvm"
@@ -202,19 +202,22 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-cargo-
 
-    - name: Clean Cargo (Unix)
-      if: matrix.os != 'self-hosted'
+    - name: Clean Cargo (macOS)
+      if: matrix.os == 'macos-latest'
+      run: cargo clean
+    - name: Clean Cargo (Linux)
+      if: matrix.os == 'self-hosted' && matrix.runner_os == 'linux'
       run: cargo clean
     - name: Clean Cargo (Windows)
-      if: matrix.runner_os == 'windows'
+      if: matrix.os == 'self-hosted' && matrix.runner_os == 'windows'
       run: cargo clean
       shell: powershell
 
     - name: Build release binary (macOS)
-      if: matrix.os != 'self-hosted' && matrix.runner_os != 'linux'
+      if: matrix.os == 'macos-latest'
       run: cargo build --release --target ${{ matrix.target }}
     - name: Build release binary (Linux)
-      if: matrix.runner_os == 'linux'
+      if: matrix.os == 'self-hosted' && matrix.runner_os == 'linux'
       run: |
         echo "Building with environment:"
         echo "LLVM_SYS_170_PREFIX = $LLVM_SYS_170_PREFIX"
@@ -223,7 +226,7 @@ jobs:
         
         cargo build --release --target ${{ matrix.target }}
     - name: Build release binary (Windows)
-      if: matrix.runner_os == 'windows'
+      if: matrix.os == 'self-hosted' && matrix.runner_os == 'windows'
       run: |
         Write-Host "Building with environment:"
         Write-Host "LLVM_SYS_170_PREFIX = $env:LLVM_SYS_170_PREFIX"
@@ -235,19 +238,19 @@ jobs:
       shell: powershell
 
     - name: Prepare artifact (macOS)
-      if: matrix.os != 'self-hosted' && matrix.runner_os != 'linux'
+      if: matrix.os == 'macos-latest'
       run: |
         mkdir -p artifacts
         cp target/${{ matrix.target }}/release/${{ matrix.artifact_name }} artifacts/${{ matrix.asset_name }}
         chmod +x artifacts/${{ matrix.asset_name }}
     - name: Prepare artifact (Linux)
-      if: matrix.runner_os == 'linux'
+      if: matrix.os == 'self-hosted' && matrix.runner_os == 'linux'
       run: |
         mkdir -p artifacts
         cp target/${{ matrix.target }}/release/${{ matrix.artifact_name }} artifacts/${{ matrix.asset_name }}
         chmod +x artifacts/${{ matrix.asset_name }}
     - name: Prepare artifact (Windows)
-      if: matrix.runner_os == 'windows'
+      if: matrix.os == 'self-hosted' && matrix.runner_os == 'windows'
       run: |
         mkdir artifacts
         copy target\${{ matrix.target }}\release\${{ matrix.artifact_name }} artifacts\${{ matrix.asset_name }}
