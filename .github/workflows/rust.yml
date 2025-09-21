@@ -18,11 +18,13 @@ jobs:
       matrix:
         include:
           - os: self-hosted
+            runner: gh-runner-ubuntu-1
             runner_os: linux
             target: x86_64-unknown-linux-gnu
             artifact_name: delta
             asset_name: delta-linux-x86_64
           - os: self-hosted
+            runner: gh-runner-windows-1
             runner_os: windows
             target: x86_64-pc-windows-msvc
             artifact_name: delta.exe
