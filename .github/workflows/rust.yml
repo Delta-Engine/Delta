@@ -104,6 +104,9 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y build-essential gcc g++ make
         
+        # Install required libraries for linking
+        sudo apt-get install -y zlib1g-dev libzstd-dev libffi-dev libncurses-dev libxml2-dev
+        
         # Check if LLVM is already installed
         if command -v llvm-config-17 &> /dev/null; then
           echo "LLVM 17 is already installed:"
