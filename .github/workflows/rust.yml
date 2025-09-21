@@ -135,8 +135,7 @@ jobs:
     - name: Check LLVM (Windows)
       if: matrix.os == 'self-hosted' && matrix.runner_os == 'windows'
       run: |
-        # Set environment variables for pre-installed LLVM at C:\llvm
-        $llvmPath = "C:\llvm"
+        $llvmPath = "C:\llvm\17.0.6"
         Write-Host "Setting LLVM_SYS_170_PREFIX to: $llvmPath"
         echo "LLVM_SYS_170_PREFIX=$llvmPath" >> $env:GITHUB_ENV
         echo "$llvmPath\bin" >> $env:GITHUB_PATH
