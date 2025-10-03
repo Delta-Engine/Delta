@@ -107,8 +107,32 @@ fn main() {
             }
             
             println!("LLVM IR saved to: {}", ir_filename);
-            println!("To compile to executable, run:");
-            println!("  clang {} -o {}", ir_filename, filename.replace(".de", ""));
+
+            // auto conversion (using clang)
+            let exe_filename = filename.replace(".de", "");
+            println!("Compiling to executable: {}", exe_filename);
+
+            let clang_status = process::Command::new("clang")
+                .arg(&ir_filename)
+                .arg("-o")
+                .arg(&exe_filename)
+                .status();
+
+            match clang_status {
+                Ok(status) => {
+                    if status.success() {
+                        println!("Compilation Successful! Run with: {}", exe_filename);
+                    } else {
+                        eprintln!("Failed to compile with clang. Exit Code: {}", status);
+                        process::exit(1)
+                    }
+                }
+                Err(error) => {
+                    eprintln!("Error executing clang: {}", error);
+                    eprintln!("You can manually compile with: clang {} -o {}", ir_filename, exe_filename);
+                    process::exit(1);
+                }
+            }
         }
     }
 }
