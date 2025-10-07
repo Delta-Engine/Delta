@@ -1,5 +1,8 @@
-let a be 10
-let b be 3
+let a be 10.0
+let b be 3.0
+
+show a
+show b
 
 show "Basic arithmetic:"
 show a + b
