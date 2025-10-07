@@ -13,3 +13,6 @@ path = "src/main.rs"
 inkwell = { version = "0.4", features = ["llvm17-0"] }
 # Future dependencies for LLVM backend
 # llvm-sys = "170"
+
+[profile.release]
+lto = true
