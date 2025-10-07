@@ -386,7 +386,7 @@ impl<'ctx> CodeGenerator<'ctx> {
         let printf_fn = self.module.get_function("printf").unwrap();
 
         // Create format string for printing floats
-        let format_str = self.builder.build_global_string_ptr("%.2f\n", "fmt")?;
+        let format_str = self.builder.build_global_string_ptr("%.16g\n", "fmt")?;
 
         self.builder.build_call(
             printf_fn,
