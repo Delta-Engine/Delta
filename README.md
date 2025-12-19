@@ -28,14 +28,50 @@ define greet with person_name
 end
 ```
 
-## Getting Started
+## Prerequisites
 
-### Prerequisites
+### LLVM
 
-- Rust compiler (rustc)
+**Linux:**
+```bash
+sudo apt-get update
+sudo apt-get install -y build-essential gcc g++ make
+sudo apt-get install -y zlib1g-dev libzstd-dev libffi-dev libncurses-dev libxml2-dev
+sudo apt-get install -y llvm-17-dev libclang-17-dev clang-17 libpolly-17-dev
+
+# Set environment variables (add to ~/.bashrc or ~/.zshrc)
+export LLVM_SYS_170_PREFIX=/usr/lib/llvm-17
+export LIBCLANG_PATH=/usr/lib/llvm-17/lib
+export PATH=/usr/lib/llvm-17/bin:$PATH
+```
+
+**macOS:**
+```bash
+brew install llvm@17
+
+# Add LLVM to your PATH (add to ~/.zshrc or ~/.bash_profile)
+export LLVM_SYS_170_PREFIX=$(brew --prefix llvm@17)
+export PATH="$(brew --prefix llvm@17)/bin:$PATH"
+export CC=$(brew --prefix llvm@17)/bin/clang
+export CXX=$(brew --prefix llvm@17)/bin/clang++
+```
+
+**Windows:**
+
+For Windows users, we recommend using our pre-compiled LLVM builds:
+- Download LLVM 17.0.6 from: https://github.com/Delta-Engine/llvm-builds-windows/releases
+- Extract the archive to `C:\llvm\17.0.6` (or your preferred location)
+- Add the following to your system environment variables:
+  - `LLVM_SYS_170_PREFIX` = `C:\llvm\17.0.6`
+  - `LIBCLANG_PATH` = `C:\llvm\17.0.6\bin`
+  - Add `C:\llvm\17.0.6\bin` to your system PATH
+
+### Rust Toolchain
+
+- Rust compiler (rustc) - [Install from rust-lang.org](https://rust-lang.org/tools/install/)
 - Cargo package manager
 
-### Installation
+## Installation
 
 1. Clone the repository:
 ```bash
@@ -45,12 +81,28 @@ cd Delta
 
 2. Build the project:
 ```bash
+cargo clean
 cargo build --release
 ```
 
 3. Run a Delta program:
 ```bash
 cargo run example.de
+```
+
+### Building with Make
+```bash
+# Build release version
+make build-release
+
+# Build development version
+make build-dev
+
+# Test interpreter mode (requires dev build)
+make test-interpret
+
+# Test compilation to LLVM IR (requires dev build)
+make test-compile
 ```
 
 ### Usage
@@ -71,7 +123,7 @@ The Delta language uses indentation to define code blocks, similar to Python. Ea
 statement
     indented_block
         nested_block
-    back_to_previous_level
+    back to previous level
 ```
 
 ## License

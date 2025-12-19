@@ -1,14 +1,14 @@
 # Delta Programming Language Makefile
 
 # Build the compiler
-build:
+build-release:
 	cargo build --release
 
 # Build for development
-dev:
+build-dev:
 	cargo build
 
-# Test interpreter mode
+# Test interpreter mode (Needs Dev Build)
 test-interpret:
 	./target/debug/delta examples/compile_test.de --interpret
 
@@ -31,15 +31,18 @@ clean:
 
 # Help
 help:
-	@echo "Delta Programming Language - Build Commands"
 	@echo ""
-	@echo "build           - Build release version"
-	@echo "dev             - Build development version"
-	@echo "test-interpret  - Test interpreter mode"
-	@echo "test-compile    - Test compilation to LLVM IR"
-	@echo "compile-to-exe  - Compile Delta to native executable"
-	@echo "run-examples    - Run all examples in interpreter mode"
-	@echo "clean           - Clean build artifacts"
-	@echo "help            - Show this help"
+	@echo "Delta Programming Language - Build Commands"
+	@echo "By PranavVerma-droid."
+	@echo "Usage: make <COMMAND>"
+	@echo ""
+	@echo "	build-release   - Build release version"
+	@echo "	build-dev       - Build development version"
+	@echo "	test-interpret  - Test interpreter mode (Requires Dev Build)"
+	@echo "	test-compile    - Test compilation to LLVM IR (Requires Dev Build)"
+	@echo "	run-examples    - Run all examples in interpreter mode"
+	@echo "	clean           - Clean build artifacts"
+	@echo "	help            - Show this help menu"
+	@echo ""
 
-.PHONY: build dev test-interpret test-compile compile-to-exe run-examples clean help
+.PHONY: build-release build-dev test-interpret test-compile run-examples clean help
